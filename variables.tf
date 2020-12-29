@@ -106,3 +106,9 @@ variable "firehose_logs_delivery_stream" {
   type        = string
   default     = ""
 }
+
+variable "create_msk_cluster" {
+  description = "Whether or not to create the MSK Cluster"
+  type        = bool
+  default     = true
+}

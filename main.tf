@@ -12,15 +12,18 @@ terraform {
 }
 
 data "aws_subnet" "this" {
-  id = var.client_subnets[0]
+  count = var.create_msk_cluster ? 1 : 0
+  id    = var.client_subnets[0]
 }
 
 resource "aws_security_group" "this" {
+  count       = var.create_msk_cluster ? 1 : 0
   name_prefix = "${var.cluster_name}-"
   vpc_id      = data.aws_subnet.this.vpc_id
 }
 
 resource "aws_security_group_rule" "msk-plain" {
+  count             = var.create_msk_cluster ? 1 : 0
   from_port         = 9092
   to_port           = 9092
   protocol          = "tcp"
@@ -30,6 +33,7 @@ resource "aws_security_group_rule" "msk-plain" {
 }
 
 resource "aws_security_group_rule" "msk-tls" {
+  count             = var.create_msk_cluster ? 1 : 0
   from_port         = 9094
   to_port           = 9094
   protocol          = "tcp"
@@ -39,6 +43,7 @@ resource "aws_security_group_rule" "msk-tls" {
 }
 
 resource "aws_security_group_rule" "zookeeper" {
+  count             = var.create_msk_cluster ? 1 : 0
   from_port         = 2181
   to_port           = 2181
   protocol          = "tcp"
@@ -48,7 +53,7 @@ resource "aws_security_group_rule" "zookeeper" {
 }
 
 resource "aws_security_group_rule" "jmx-exporter" {
-  count = var.prometheus_jmx_exporter ? 1 : 0
+  count = var.create_msk_cluster && var.prometheus_jmx_exporter ? 1 : 0
 
   from_port         = 11001
   to_port           = 11001
@@ -59,7 +64,7 @@ resource "aws_security_group_rule" "jmx-exporter" {
 }
 
 resource "aws_security_group_rule" "node_exporter" {
-  count = var.prometheus_node_exporter ? 1 : 0
+  count = var.create_msk_cluster && var.prometheus_node_exporter ? 1 : 0
 
   from_port         = 11002
   to_port           = 11002
@@ -70,6 +75,7 @@ resource "aws_security_group_rule" "node_exporter" {
 }
 
 resource "random_id" "configuration" {
+  count       = var.create_msk_cluster ? 1 : 0
   prefix      = "${var.cluster_name}-"
   byte_length = 8
 
@@ -79,6 +85,7 @@ resource "random_id" "configuration" {
 }
 
 resource "aws_msk_configuration" "this" {
+  count             = var.create_msk_cluster ? 1 : 0
   kafka_versions    = [var.kafka_version]
   name              = random_id.configuration.dec
   server_properties = local.server_properties
@@ -89,6 +96,7 @@ resource "aws_msk_configuration" "this" {
 }
 
 resource "aws_msk_cluster" "this" {
+  count                  = var.create_msk_cluster ? 1 : 0
   cluster_name           = var.cluster_name
   kafka_version          = var.kafka_version
   number_of_broker_nodes = var.number_of_nodes
